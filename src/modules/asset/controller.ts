@@ -26,14 +26,20 @@ export class AssetController {
       }
 
       try {
-        const assets = await this.assetService.getAssetsByPortfolioId(portfolioId, userId)
+        const assets = await this.assetService.getAssetsByPortfolioId(
+          portfolioId,
+          userId
+        )
 
         res.status(200).json({
           success: true,
           data: assets,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Portfolio not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Portfolio not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Portfolio not found',
@@ -77,7 +83,10 @@ export class AssetController {
           data: asset,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Asset not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Asset not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Asset not found',
@@ -144,15 +153,21 @@ export class AssetController {
           data: asset,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && (serviceError.message.includes('required') || 
+        if (
+          serviceError instanceof Error &&
+          (serviceError.message.includes('required') ||
             serviceError.message.includes('must be greater') ||
-            serviceError.message.includes('Portfolio not found'))) {
+            serviceError.message.includes('Portfolio not found'))
+        ) {
           return res.status(400).json({
             success: false,
             error: serviceError.message,
           })
         }
-        if (serviceError instanceof Error && serviceError.message === 'Portfolio not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Portfolio not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Portfolio not found',
@@ -206,14 +221,20 @@ export class AssetController {
         if (name !== undefined) updateData.name = name
         if (type !== undefined) updateData.type = type
         if (quantity !== undefined) updateData.quantity = parseFloat(quantity)
-        if (purchasePrice !== undefined) updateData.purchasePrice = parseFloat(purchasePrice)
-        if (currentPrice !== undefined) updateData.currentPrice = parseFloat(currentPrice)
+        if (purchasePrice !== undefined)
+          updateData.purchasePrice = parseFloat(purchasePrice)
+        if (currentPrice !== undefined)
+          updateData.currentPrice = parseFloat(currentPrice)
         if (purchaseDate !== undefined) updateData.purchaseDate = purchaseDate
         if (exchange !== undefined) updateData.exchange = exchange
         if (currency !== undefined) updateData.currency = currency
         if (notes !== undefined) updateData.notes = notes
 
-        const asset = await this.assetService.updateAsset(assetId, userId, updateData)
+        const asset = await this.assetService.updateAsset(
+          assetId,
+          userId,
+          updateData
+        )
 
         res.status(200).json({
           success: true,
@@ -221,13 +242,19 @@ export class AssetController {
           data: asset,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Asset not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Asset not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Asset not found',
           })
         }
-        if (serviceError instanceof Error && serviceError.message.includes('must be greater')) {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message.includes('must be greater')
+        ) {
           return res.status(400).json({
             success: false,
             error: serviceError.message,
@@ -271,7 +298,10 @@ export class AssetController {
           message: 'Asset deleted successfully',
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Asset not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Asset not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Asset not found',
@@ -287,4 +317,4 @@ export class AssetController {
       })
     }
   }
-} 
+}

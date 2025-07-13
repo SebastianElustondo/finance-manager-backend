@@ -52,14 +52,20 @@ export class PortfolioController {
       }
 
       try {
-        const portfolio = await this.portfolioService.getPortfolioById(portfolioId, userId)
-        
+        const portfolio = await this.portfolioService.getPortfolioById(
+          portfolioId,
+          userId
+        )
+
         res.status(200).json({
           success: true,
           data: portfolio,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Portfolio not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Portfolio not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Portfolio not found',
@@ -102,7 +108,11 @@ export class PortfolioController {
           data: portfolio,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && (serviceError.message.includes('required') || serviceError.message.includes('name'))) {
+        if (
+          serviceError instanceof Error &&
+          (serviceError.message.includes('required') ||
+            serviceError.message.includes('name'))
+        ) {
           return res.status(400).json({
             success: false,
             error: serviceError.message,
@@ -146,8 +156,12 @@ export class PortfolioController {
           currency,
           isDefault,
         }
-        
-        const portfolio = await this.portfolioService.updatePortfolio(portfolioId, userId, updateData)
+
+        const portfolio = await this.portfolioService.updatePortfolio(
+          portfolioId,
+          userId,
+          updateData
+        )
 
         res.status(200).json({
           success: true,
@@ -155,7 +169,10 @@ export class PortfolioController {
           data: portfolio,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Portfolio not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Portfolio not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Portfolio not found',
@@ -199,7 +216,10 @@ export class PortfolioController {
           message: 'Portfolio deleted successfully',
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Portfolio not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Portfolio not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Portfolio not found',
@@ -215,4 +235,4 @@ export class PortfolioController {
       })
     }
   }
-} 
+}

@@ -7,4 +7,4 @@ export { AssetService } from './service'
 export { AssetController } from './controller'
 
 // Export routes
-export { default as assetRoutes } from './routes' 
+export { default as assetRoutes } from './routes'

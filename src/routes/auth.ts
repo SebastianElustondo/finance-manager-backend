@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router } from 'express'
 
-const router = Router();
+const router = Router()
 
 // Auth routes will be implemented later
 router.get('/health', (req, res) => {
-  res.json({ message: 'Auth service is running' });
-});
+  res.json({ message: 'Auth service is running' })
+})
 
-export default router; 
+export default router

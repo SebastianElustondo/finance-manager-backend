@@ -1,9 +1,9 @@
 import { supabase } from '../../shared/config/config'
-import { 
-  IAlertRepository, 
-  Alert, 
-  CreateAlertData, 
-  UpdateAlertData 
+import {
+  IAlertRepository,
+  Alert,
+  CreateAlertData,
+  UpdateAlertData,
 } from './interfaces'
 
 export class AlertRepository implements IAlertRepository {
@@ -53,7 +53,11 @@ export class AlertRepository implements IAlertRepository {
     return alert
   }
 
-  async update(id: string, userId: string, data: UpdateAlertData): Promise<Alert> {
+  async update(
+    id: string,
+    userId: string,
+    data: UpdateAlertData
+  ): Promise<Alert> {
     const { data: alert, error } = await supabase
       .from('alerts')
       .update(data)
@@ -99,9 +103,9 @@ export class AlertRepository implements IAlertRepository {
   async markAsTriggered(id: string): Promise<void> {
     const { error } = await supabase
       .from('alerts')
-      .update({ 
-        is_triggered: true, 
-        triggered_at: new Date().toISOString() 
+      .update({
+        is_triggered: true,
+        triggered_at: new Date().toISOString(),
       })
       .eq('id', id)
 
@@ -109,4 +113,4 @@ export class AlertRepository implements IAlertRepository {
       throw new Error(`Failed to mark alert as triggered: ${error.message}`)
     }
   }
-} 
+}

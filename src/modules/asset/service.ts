@@ -1,12 +1,12 @@
 import { IPortfolioRepository } from '../portfolio/interfaces'
-import { 
-  IAssetRepository, 
-  Asset, 
-  IAssetService, 
-  CreateAssetRequest, 
+import {
+  IAssetRepository,
+  Asset,
+  IAssetService,
+  CreateAssetRequest,
   UpdateAssetRequest,
   CreateAssetData,
-  UpdateAssetData 
+  UpdateAssetData,
 } from './interfaces'
 
 export class AssetService implements IAssetService {
@@ -15,13 +15,19 @@ export class AssetService implements IAssetService {
     private portfolioRepository: IPortfolioRepository
   ) {}
 
-  async getAssetsByPortfolioId(portfolioId: string, userId: string): Promise<Asset[]> {
+  async getAssetsByPortfolioId(
+    portfolioId: string,
+    userId: string
+  ): Promise<Asset[]> {
     if (!portfolioId || !userId) {
       throw new Error('Portfolio ID and User ID are required')
     }
 
     // Verify portfolio belongs to user
-    const portfolioExists = await this.portfolioRepository.exists(portfolioId, userId)
+    const portfolioExists = await this.portfolioRepository.exists(
+      portfolioId,
+      userId
+    )
     if (!portfolioExists) {
       throw new Error('Portfolio not found')
     }
@@ -48,9 +54,17 @@ export class AssetService implements IAssetService {
     }
 
     // Validate required fields
-    if (!data.portfolioId || !data.symbol || !data.name || !data.type || 
-        data.quantity === undefined || data.purchasePrice === undefined) {
-      throw new Error('Required fields: portfolioId, symbol, name, type, quantity, purchasePrice')
+    if (
+      !data.portfolioId ||
+      !data.symbol ||
+      !data.name ||
+      !data.type ||
+      data.quantity === undefined ||
+      data.purchasePrice === undefined
+    ) {
+      throw new Error(
+        'Required fields: portfolioId, symbol, name, type, quantity, purchasePrice'
+      )
     }
 
     if (data.quantity <= 0) {
@@ -62,7 +76,10 @@ export class AssetService implements IAssetService {
     }
 
     // Verify portfolio belongs to user
-    const portfolioExists = await this.portfolioRepository.exists(data.portfolioId, userId)
+    const portfolioExists = await this.portfolioRepository.exists(
+      data.portfolioId,
+      userId
+    )
     if (!portfolioExists) {
       throw new Error('Portfolio not found')
     }
@@ -90,7 +107,11 @@ export class AssetService implements IAssetService {
     return await this.assetRepository.create(assetData)
   }
 
-  async updateAsset(id: string, userId: string, data: UpdateAssetRequest): Promise<Asset> {
+  async updateAsset(
+    id: string,
+    userId: string,
+    data: UpdateAssetRequest
+  ): Promise<Asset> {
     if (!id || !userId) {
       throw new Error('Asset ID and User ID are required')
     }
@@ -119,9 +140,12 @@ export class AssetService implements IAssetService {
     if (data.name !== undefined) updateData.name = data.name.trim()
     if (data.type !== undefined) updateData.type = data.type
     if (data.quantity !== undefined) updateData.quantity = data.quantity
-    if (data.purchasePrice !== undefined) updateData.purchase_price = data.purchasePrice
-    if (data.currentPrice !== undefined) updateData.current_price = data.currentPrice
-    if (data.purchaseDate !== undefined) updateData.purchase_date = data.purchaseDate
+    if (data.purchasePrice !== undefined)
+      updateData.purchase_price = data.purchasePrice
+    if (data.currentPrice !== undefined)
+      updateData.current_price = data.currentPrice
+    if (data.purchaseDate !== undefined)
+      updateData.purchase_date = data.purchaseDate
     if (data.currency !== undefined) updateData.currency = data.currency
 
     if (data.exchange !== undefined) {
@@ -154,4 +178,4 @@ export class AssetService implements IAssetService {
 
     await this.assetRepository.delete(id, userId)
   }
-} 
+}

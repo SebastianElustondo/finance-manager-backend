@@ -37,7 +37,10 @@ export class Container {
 
     // Initialize services with their dependencies
     this.portfolioService = new PortfolioService(this.portfolioRepository)
-    this.assetService = new AssetService(this.assetRepository, this.portfolioRepository)
+    this.assetService = new AssetService(
+      this.assetRepository,
+      this.portfolioRepository
+    )
     this.alertService = new AlertService(this.alertRepository)
 
     // Initialize controllers with their dependencies
@@ -74,4 +77,4 @@ export class Container {
 }
 
 // Create and export a single instance
-export const container = new Container() 
+export const container = new Container()

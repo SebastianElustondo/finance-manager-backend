@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../types';
+import { Request, Response, NextFunction } from 'express'
+import { AppError } from '../types'
 
 export const errorHandler = (
   err: AppError,
@@ -7,8 +7,8 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
-  const error = { ...err };
-  error.message = err.message;
+  const error = { ...err }
+  error.message = err.message
 
   // Log error
   console.error('Error occurred:', {
@@ -19,68 +19,68 @@ export const errorHandler = (
     ip: req.ip,
     userAgent: req.get('User-Agent'),
     timestamp: new Date().toISOString(),
-  });
+  })
 
   // Default error values
-  let statusCode = 500;
-  let message = 'Internal Server Error';
+  let statusCode = 500
+  let message = 'Internal Server Error'
 
   // Handle specific error types
   if (err.name === 'ValidationError') {
-    statusCode = 400;
-    message = 'Validation Error';
+    statusCode = 400
+    message = 'Validation Error'
   }
 
   if (err.name === 'UnauthorizedError') {
-    statusCode = 401;
-    message = 'Unauthorized';
+    statusCode = 401
+    message = 'Unauthorized'
   }
 
   if (err.name === 'ForbiddenError') {
-    statusCode = 403;
-    message = 'Forbidden';
+    statusCode = 403
+    message = 'Forbidden'
   }
 
   if (err.name === 'NotFoundError') {
-    statusCode = 404;
-    message = 'Not Found';
+    statusCode = 404
+    message = 'Not Found'
   }
 
   if (err.name === 'ConflictError') {
-    statusCode = 409;
-    message = 'Conflict';
+    statusCode = 409
+    message = 'Conflict'
   }
 
   if (err.name === 'TooManyRequestsError') {
-    statusCode = 429;
-    message = 'Too Many Requests';
+    statusCode = 429
+    message = 'Too Many Requests'
   }
 
   // Use error's status code if available
   if (err.statusCode) {
-    statusCode = err.statusCode;
+    statusCode = err.statusCode
   }
 
   // Use error's message if it's operational
   if (err.isOperational) {
-    message = err.message;
+    message = err.message
   }
 
   // Handle Supabase errors
   if (err.message?.includes('JWT')) {
-    statusCode = 401;
-    message = 'Invalid token';
+    statusCode = 401
+    message = 'Invalid token'
   }
 
   // Handle database errors
   if (err.message?.includes('duplicate key')) {
-    statusCode = 409;
-    message = 'Resource already exists';
+    statusCode = 409
+    message = 'Resource already exists'
   }
 
   if (err.message?.includes('foreign key constraint')) {
-    statusCode = 400;
-    message = 'Invalid reference';
+    statusCode = 400
+    message = 'Invalid reference'
   }
 
   // Send error response
@@ -91,24 +91,24 @@ export const errorHandler = (
       stack: err.stack,
       details: err.message,
     }),
-  });
-};
+  })
+}
 
 export const notFoundHandler = (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: 'Not Found',
     message: `Route ${req.originalUrl} not found`,
-  });
-};
+  })
+}
 
 export const createError = (
   message: string,
   statusCode: number,
   isOperational = true
 ): AppError => {
-  const error = new Error(message) as AppError;
-  error.statusCode = statusCode;
-  error.isOperational = isOperational;
-  return error;
-}; 
+  const error = new Error(message) as AppError
+  error.statusCode = statusCode
+  error.isOperational = isOperational
+  return error
+}

@@ -32,7 +32,11 @@ export interface IPortfolioRepository {
   findAllByUserId(userId: string): Promise<Portfolio[]>
   findById(id: string, userId: string): Promise<Portfolio | null>
   create(data: CreatePortfolioData): Promise<Portfolio>
-  update(id: string, userId: string, data: UpdatePortfolioData): Promise<Portfolio>
+  update(
+    id: string,
+    userId: string,
+    data: UpdatePortfolioData
+  ): Promise<Portfolio>
   delete(id: string, userId: string): Promise<void>
   setAllDefaultToFalse(userId: string): Promise<void>
   exists(id: string, userId: string): Promise<boolean>
@@ -56,7 +60,14 @@ export interface UpdatePortfolioRequest {
 export interface IPortfolioService {
   getAllPortfolios(userId: string): Promise<Portfolio[]>
   getPortfolioById(id: string, userId: string): Promise<Portfolio>
-  createPortfolio(userId: string, data: CreatePortfolioRequest): Promise<Portfolio>
-  updatePortfolio(id: string, userId: string, data: UpdatePortfolioRequest): Promise<Portfolio>
+  createPortfolio(
+    userId: string,
+    data: CreatePortfolioRequest
+  ): Promise<Portfolio>
+  updatePortfolio(
+    id: string,
+    userId: string,
+    data: UpdatePortfolioRequest
+  ): Promise<Portfolio>
   deletePortfolio(id: string, userId: string): Promise<void>
-} 
+}

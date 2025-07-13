@@ -1,11 +1,11 @@
-import { 
-  IPortfolioRepository, 
-  Portfolio, 
-  IPortfolioService, 
-  CreatePortfolioRequest, 
+import {
+  IPortfolioRepository,
+  Portfolio,
+  IPortfolioService,
+  CreatePortfolioRequest,
   UpdatePortfolioRequest,
   CreatePortfolioData,
-  UpdatePortfolioData 
+  UpdatePortfolioData,
 } from './interfaces'
 
 export class PortfolioService implements IPortfolioService {
@@ -32,7 +32,10 @@ export class PortfolioService implements IPortfolioService {
     return portfolio
   }
 
-  async createPortfolio(userId: string, data: CreatePortfolioRequest): Promise<Portfolio> {
+  async createPortfolio(
+    userId: string,
+    data: CreatePortfolioRequest
+  ): Promise<Portfolio> {
     if (!userId) {
       throw new Error('User ID is required')
     }
@@ -61,7 +64,11 @@ export class PortfolioService implements IPortfolioService {
     return await this.portfolioRepository.create(portfolioData)
   }
 
-  async updatePortfolio(id: string, userId: string, data: UpdatePortfolioRequest): Promise<Portfolio> {
+  async updatePortfolio(
+    id: string,
+    userId: string,
+    data: UpdatePortfolioRequest
+  ): Promise<Portfolio> {
     if (!id || !userId) {
       throw new Error('Portfolio ID and User ID are required')
     }
@@ -79,7 +86,8 @@ export class PortfolioService implements IPortfolioService {
 
     const updateData: UpdatePortfolioData = {}
     if (data.name !== undefined) updateData.name = data.name.trim()
-    if (data.description !== undefined) updateData.description = data.description?.trim()
+    if (data.description !== undefined)
+      updateData.description = data.description?.trim()
     if (data.currency !== undefined) updateData.currency = data.currency
     if (data.isDefault !== undefined) updateData.is_default = data.isDefault
 
@@ -99,4 +107,4 @@ export class PortfolioService implements IPortfolioService {
 
     await this.portfolioRepository.delete(id, userId)
   }
-} 
+}

@@ -61,7 +61,10 @@ export class AlertController {
           data: alert,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Alert not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Alert not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Alert not found',
@@ -105,8 +108,11 @@ export class AlertController {
           data: alert,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && (serviceError.message.includes('required') || 
-            serviceError.message.includes('must be greater'))) {
+        if (
+          serviceError instanceof Error &&
+          (serviceError.message.includes('required') ||
+            serviceError.message.includes('must be greater'))
+        ) {
           return res.status(400).json({
             success: false,
             error: serviceError.message,
@@ -147,11 +153,16 @@ export class AlertController {
         const updateData: UpdateAlertRequest = {}
         if (symbol !== undefined) updateData.symbol = symbol
         if (type !== undefined) updateData.type = type
-        if (condition !== undefined) updateData.condition = parseFloat(condition)
+        if (condition !== undefined)
+          updateData.condition = parseFloat(condition)
         if (isActive !== undefined) updateData.isActive = isActive
         if (message !== undefined) updateData.message = message
 
-        const alert = await this.alertService.updateAlert(alertId, userId, updateData)
+        const alert = await this.alertService.updateAlert(
+          alertId,
+          userId,
+          updateData
+        )
 
         res.status(200).json({
           success: true,
@@ -159,13 +170,19 @@ export class AlertController {
           data: alert,
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Alert not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Alert not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Alert not found',
           })
         }
-        if (serviceError instanceof Error && serviceError.message.includes('must be greater')) {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message.includes('must be greater')
+        ) {
           return res.status(400).json({
             success: false,
             error: serviceError.message,
@@ -209,7 +226,10 @@ export class AlertController {
           message: 'Alert deleted successfully',
         })
       } catch (serviceError: unknown) {
-        if (serviceError instanceof Error && serviceError.message === 'Alert not found') {
+        if (
+          serviceError instanceof Error &&
+          serviceError.message === 'Alert not found'
+        ) {
           return res.status(404).json({
             success: false,
             error: 'Alert not found',
@@ -225,4 +245,4 @@ export class AlertController {
       })
     }
   }
-} 
+}

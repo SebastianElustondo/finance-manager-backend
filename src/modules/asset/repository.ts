@@ -1,9 +1,9 @@
 import { supabase } from '../../shared/config/config'
-import { 
-  IAssetRepository, 
-  Asset, 
-  CreateAssetData, 
-  UpdateAssetData 
+import {
+  IAssetRepository,
+  Asset,
+  CreateAssetData,
+  UpdateAssetData,
 } from './interfaces'
 
 export class AssetRepository implements IAssetRepository {
@@ -53,7 +53,11 @@ export class AssetRepository implements IAssetRepository {
     return asset
   }
 
-  async update(id: string, userId: string, data: UpdateAssetData): Promise<Asset> {
+  async update(
+    id: string,
+    userId: string,
+    data: UpdateAssetData
+  ): Promise<Asset> {
     const { data: asset, error } = await supabase
       .from('assets')
       .update(data)
@@ -69,10 +73,7 @@ export class AssetRepository implements IAssetRepository {
   }
 
   async delete(id: string, _userId: string): Promise<void> {
-    const { error } = await supabase
-      .from('assets')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('assets').delete().eq('id', id)
 
     if (error) {
       throw new Error(`Failed to delete asset: ${error.message}`)
@@ -97,4 +98,4 @@ export class AssetRepository implements IAssetRepository {
 
     return !!data
   }
-} 
+}

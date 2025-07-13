@@ -7,4 +7,4 @@ export { PortfolioService } from './service'
 export { PortfolioController } from './controller'
 
 // Export routes
-export { default as portfolioRoutes } from './routes' 
+export { default as portfolioRoutes } from './routes'

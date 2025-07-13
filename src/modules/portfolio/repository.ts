@@ -1,9 +1,9 @@
 import { supabase } from '../../shared/config/config'
-import { 
-  IPortfolioRepository, 
-  Portfolio, 
-  CreatePortfolioData, 
-  UpdatePortfolioData 
+import {
+  IPortfolioRepository,
+  Portfolio,
+  CreatePortfolioData,
+  UpdatePortfolioData,
 } from './interfaces'
 
 export class PortfolioRepository implements IPortfolioRepository {
@@ -53,7 +53,11 @@ export class PortfolioRepository implements IPortfolioRepository {
     return portfolio
   }
 
-  async update(id: string, userId: string, data: UpdatePortfolioData): Promise<Portfolio> {
+  async update(
+    id: string,
+    userId: string,
+    data: UpdatePortfolioData
+  ): Promise<Portfolio> {
     const { data: portfolio, error } = await supabase
       .from('portfolios')
       .update(data)
@@ -110,4 +114,4 @@ export class PortfolioRepository implements IPortfolioRepository {
 
     return !!data
   }
-} 
+}

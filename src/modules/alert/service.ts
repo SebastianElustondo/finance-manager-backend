@@ -1,10 +1,10 @@
-import { 
-  IAlertRepository, 
-  Alert, 
-  IAlertService, 
-  CreateAlertRequest, 
+import {
+  IAlertRepository,
+  Alert,
+  IAlertService,
+  CreateAlertRequest,
   UpdateAlertRequest,
-  UpdateAlertData 
+  UpdateAlertData,
 } from './interfaces'
 
 export class AlertService implements IAlertService {
@@ -37,7 +37,12 @@ export class AlertService implements IAlertService {
     }
 
     // Validate required fields
-    if (!data.symbol || !data.type || data.condition === undefined || !data.message) {
+    if (
+      !data.symbol ||
+      !data.type ||
+      data.condition === undefined ||
+      !data.message
+    ) {
       throw new Error('Required fields: symbol, type, condition, message')
     }
 
@@ -58,7 +63,11 @@ export class AlertService implements IAlertService {
     return await this.alertRepository.create(alertData)
   }
 
-  async updateAlert(id: string, userId: string, data: UpdateAlertRequest): Promise<Alert> {
+  async updateAlert(
+    id: string,
+    userId: string,
+    data: UpdateAlertRequest
+  ): Promise<Alert> {
     if (!id || !userId) {
       throw new Error('Alert ID and User ID are required')
     }
@@ -98,13 +107,16 @@ export class AlertService implements IAlertService {
     await this.alertRepository.delete(id, userId)
   }
 
-  async checkAndTriggerAlerts(symbol: string, currentPrice: number): Promise<void> {
+  async checkAndTriggerAlerts(
+    symbol: string,
+    currentPrice: number
+  ): Promise<void> {
     if (!symbol || currentPrice <= 0) {
       throw new Error('Valid symbol and price are required')
     }
 
     const activeAlerts = await this.alertRepository.findActiveBySymbol(symbol)
-    
+
     for (const alert of activeAlerts) {
       let shouldTrigger = false
 
@@ -135,4 +147,4 @@ export class AlertService implements IAlertService {
       }
     }
   }
-} 
+}

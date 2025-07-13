@@ -84,6 +84,10 @@ export interface IAssetService {
   getAssetsByPortfolioId(portfolioId: string, userId: string): Promise<Asset[]>
   getAssetById(id: string, userId: string): Promise<Asset>
   createAsset(userId: string, data: CreateAssetRequest): Promise<Asset>
-  updateAsset(id: string, userId: string, data: UpdateAssetRequest): Promise<Asset>
+  updateAsset(
+    id: string,
+    userId: string,
+    data: UpdateAssetRequest
+  ): Promise<Asset>
   deleteAsset(id: string, userId: string): Promise<void>
-} 
+}

@@ -7,4 +7,4 @@ export { AlertService } from './service'
 export { AlertController } from './controller'
 
 // Export routes
-export { default as alertRoutes } from './routes' 
+export { default as alertRoutes } from './routes'
