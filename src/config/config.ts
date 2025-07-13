@@ -35,6 +35,18 @@ export const config = {
     coinGecko: process.env.COINGECKO_API_KEY || '',
   },
 
+  // Polygon.io configuration
+  polygon: {
+    apiKey: process.env.POLYGON_API_KEY || '',
+    baseUrl: process.env.POLYGON_BASE_URL || 'https://api.polygon.io',
+    websocketUrl: process.env.POLYGON_WEBSOCKET_URL || 'wss://socket.polygon.io',
+    plan: process.env.POLYGON_PLAN || 'basic',
+    rateLimit: {
+      requests: parseInt(process.env.POLYGON_RATE_LIMIT_REQUESTS || '5', 10),
+      windowMs: parseInt(process.env.POLYGON_RATE_LIMIT_WINDOW_MS || '60000', 10),
+    },
+  },
+
   // Redis configuration
   redis: {
     url: process.env.REDIS_URL || 'redis://localhost:6379',

@@ -186,6 +186,129 @@ export interface CoinGeckoResponse {
   total_volume: number;
 }
 
+// Polygon.io API types
+export interface PolygonPreviousCloseResponse {
+  ticker: string;
+  queryCount: number;
+  resultsCount: number;
+  adjusted: boolean;
+  results: {
+    T: string; // Ticker
+    c: number; // Close price
+    h: number; // High price
+    l: number; // Low price
+    o: number; // Open price
+    v: number; // Volume
+    t: number; // Timestamp
+  }[];
+  status: string;
+  request_id: string;
+}
+
+export interface PolygonAggregatesResponse {
+  ticker: string;
+  queryCount: number;
+  resultsCount: number;
+  adjusted: boolean;
+  results: {
+    c: number; // Close price
+    h: number; // High price
+    l: number; // Low price
+    o: number; // Open price
+    v: number; // Volume
+    t: number; // Timestamp
+    vw: number; // Volume weighted average price
+    n: number; // Number of transactions
+  }[];
+  status: string;
+  request_id: string;
+  next_url?: string;
+}
+
+export interface PolygonSnapshotResponse {
+  status: string;
+  request_id: string;
+  results: {
+    ticker: string;
+    todaysChangePerc: number;
+    todaysChange: number;
+    updated: number;
+    day: {
+      c: number; // Close
+      h: number; // High
+      l: number; // Low
+      o: number; // Open
+      v: number; // Volume
+    };
+    min: {
+      c: number;
+      h: number;
+      l: number;
+      o: number;
+      v: number;
+    };
+    prevDay: {
+      c: number;
+      h: number;
+      l: number;
+      o: number;
+      v: number;
+    };
+  }[];
+}
+
+export interface PolygonTickerDetailsResponse {
+  results: {
+    ticker: string;
+    name: string;
+    market: string;
+    locale: string;
+    primary_exchange: string;
+    type: string;
+    active: boolean;
+    currency_name: string;
+    cik?: string;
+    composite_figi?: string;
+    share_class_figi?: string;
+    last_updated_utc?: string;
+  };
+  status: string;
+  request_id: string;
+}
+
+export interface PolygonMarketStatusResponse {
+  market: string;
+  serverTime: string;
+  exchanges: {
+    nasdaq: string;
+    nyse: string;
+    otc: string;
+  };
+  currencies: {
+    fx: string;
+    crypto: string;
+  };
+}
+
+export interface PolygonWebSocketMessage {
+  ev: string; // Event type
+  sym: string; // Symbol
+  v?: number; // Volume
+  av?: number; // Accumulated volume
+  op?: number; // Open price
+  vw?: number; // Volume weighted average price
+  o?: number; // Open price
+  c?: number; // Close price
+  h?: number; // High price
+  l?: number; // Low price
+  a?: number; // Ask price
+  b?: number; // Bid price
+  t?: number; // Timestamp
+  n?: number; // Number of trades
+  s?: number; // Timestamp start
+  e?: number; // Timestamp end
+}
+
 // Database models
 export interface DatabaseUser {
   id: string;

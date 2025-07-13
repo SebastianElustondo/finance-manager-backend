@@ -49,7 +49,7 @@ export const authMiddleware = async (
     };
 
     req.user = authenticatedUser;
-    next();
+    return next();
   } catch (error) {
     console.error('Auth middleware error:', error);
     return res.status(500).json({

@@ -9,10 +9,10 @@ import { WebSocketServer } from 'ws';
 
 // Import routes
 import authRoutes from './routes/auth';
-import portfolioRoutes from './routes/portfolio';
-import assetRoutes from './routes/assets';
-import priceRoutes from './routes/prices';
-import alertRoutes from './routes/alerts';
+import portfolioRoutes from './routes/portfolioRoutes';
+import assetRoutes from './routes/assetRoutes';
+import priceRoutes from './routes/priceRoutes';
+import alertRoutes from './routes/alertRoutes';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';

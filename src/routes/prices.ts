@@ -27,7 +27,7 @@ router.get('/current/:symbol', async (req: AuthenticatedRequest, res: Response) 
       source: 'mock',
     };
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: mockPrice,
     });

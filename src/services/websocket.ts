@@ -1,5 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { PriceUpdateMessage, AlertMessage, WebSocketMessage } from '../types';
+import { PolygonWebSocketClient } from './polygon-websocket';
+import { PriceData } from '../repositories/interfaces/IPriceRepository';
 
 interface ConnectedClient {
   ws: WebSocket;
@@ -8,6 +10,9 @@ interface ConnectedClient {
 }
 
 const connectedClients = new Map<string, ConnectedClient>();
+
+// Polygon.io WebSocket client instance
+let polygonWsClient: PolygonWebSocketClient | null = null;
 
 export const initializeWebSocket = (wss: WebSocketServer) => {
   wss.on('connection', (ws: WebSocket) => {
@@ -35,6 +40,26 @@ export const initializeWebSocket = (wss: WebSocketServer) => {
 
     ws.on('close', () => {
       console.log(`🔌 WebSocket client disconnected: ${clientId}`);
+      
+      // Clean up Polygon.io subscriptions for symbols no longer needed
+      const disconnectedClient = connectedClients.get(clientId);
+      if (disconnectedClient) {
+        disconnectedClient.subscribedSymbols.forEach(symbol => {
+          // Check if any other client is still subscribed to this symbol
+          let stillSubscribed = false;
+          connectedClients.forEach((otherClient, otherClientId) => {
+            if (otherClientId !== clientId && otherClient.subscribedSymbols.has(symbol)) {
+              stillSubscribed = true;
+            }
+          });
+          
+          // Only unsubscribe from Polygon.io if no other client needs this symbol
+          if (!stillSubscribed && polygonWsClient && polygonWsClient.isConnected()) {
+            polygonWsClient.unsubscribe(symbol);
+          }
+        });
+      }
+      
       connectedClients.delete(clientId);
     });
 
@@ -50,10 +75,68 @@ export const initializeWebSocket = (wss: WebSocketServer) => {
     }));
   });
 
-  // Start price update simulation (in production, this would be real data)
+  // Initialize Polygon.io WebSocket client for real-time data
+  initializePolygonWebSocket();
+  
+  // Start price update simulation as fallback (mock data)
   startPriceUpdateSimulation();
 
   console.log('🚀 WebSocket server initialized');
+};
+
+// Initialize Polygon.io WebSocket client for real-time price updates
+const initializePolygonWebSocket = () => {
+  try {
+    polygonWsClient = new PolygonWebSocketClient(
+      // onPriceUpdate callback
+      (priceData: PriceData) => {
+        const priceUpdateMessage: PriceUpdateMessage = {
+          type: 'price_update',
+          data: priceData,
+          timestamp: new Date(),
+        };
+        
+        // Broadcast to all clients subscribed to this symbol
+        broadcastToSubscribers(priceData.symbol, priceUpdateMessage);
+      },
+      // onError callback
+      (error: Error) => {
+        console.error('Polygon.io WebSocket error:', error);
+        
+        // Optionally broadcast error to clients
+        const errorMessage: WebSocketMessage = {
+          type: 'error',
+          data: { message: `Real-time data error: ${error.message}` },
+          timestamp: new Date(),
+        };
+        broadcastToAll(errorMessage);
+      },
+      // onConnect callback
+      () => {
+        console.log('✅ Polygon.io WebSocket connected and authenticated');
+        
+        // Resubscribe to all symbols that clients are interested in
+        const allSymbols = new Set<string>();
+        connectedClients.forEach(client => {
+          client.subscribedSymbols.forEach(symbol => allSymbols.add(symbol));
+        });
+        
+        allSymbols.forEach(symbol => {
+          if (polygonWsClient) {
+            polygonWsClient.subscribe(symbol);
+          }
+        });
+      },
+      // onDisconnect callback
+      () => {
+        console.log('❌ Polygon.io WebSocket disconnected');
+      }
+    );
+    
+    polygonWsClient.connect();
+  } catch (error) {
+    console.error('Failed to initialize Polygon.io WebSocket:', error);
+  }
 };
 
 const handleMessage = (clientId: string, message: any) => {
@@ -111,7 +194,13 @@ const handleSubscribe = (clientId: string, symbols: string[]) => {
   if (!client) return;
 
   symbols.forEach(symbol => {
-    client.subscribedSymbols.add(symbol.toUpperCase());
+    const upperSymbol = symbol.toUpperCase();
+    client.subscribedSymbols.add(upperSymbol);
+    
+    // Also subscribe to Polygon.io WebSocket for real-time updates
+    if (polygonWsClient && polygonWsClient.isConnected()) {
+      polygonWsClient.subscribe(upperSymbol);
+    }
   });
 
   client.ws.send(JSON.stringify({
@@ -127,7 +216,21 @@ const handleUnsubscribe = (clientId: string, symbols: string[]) => {
   if (!client) return;
 
   symbols.forEach(symbol => {
-    client.subscribedSymbols.delete(symbol.toUpperCase());
+    const upperSymbol = symbol.toUpperCase();
+    client.subscribedSymbols.delete(upperSymbol);
+    
+    // Check if any other client is still subscribed to this symbol
+    let stillSubscribed = false;
+    connectedClients.forEach(otherClient => {
+      if (otherClient !== client && otherClient.subscribedSymbols.has(upperSymbol)) {
+        stillSubscribed = true;
+      }
+    });
+    
+    // Only unsubscribe from Polygon.io if no other client needs this symbol
+    if (!stillSubscribed && polygonWsClient && polygonWsClient.isConnected()) {
+      polygonWsClient.unsubscribe(upperSymbol);
+    }
   });
 
   client.ws.send(JSON.stringify({
