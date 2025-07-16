@@ -34,13 +34,22 @@ export interface Alert {
 }
 
 export interface IAlertRepository {
-  findAllByUserId(userId: string): Promise<Alert[]>
-  findById(id: string, userId: string): Promise<Alert | null>
-  create(data: CreateAlertData): Promise<Alert>
-  update(id: string, userId: string, data: UpdateAlertData): Promise<Alert>
-  delete(id: string, userId: string): Promise<void>
-  findActiveBySymbol(symbol: string): Promise<Alert[]>
-  markAsTriggered(id: string): Promise<void>
+  findAllByUserId(userId: string, userToken?: string): Promise<Alert[]>
+  findById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Alert | null>
+  create(data: CreateAlertData, userToken?: string): Promise<Alert>
+  update(
+    id: string,
+    userId: string,
+    data: UpdateAlertData,
+    userToken?: string
+  ): Promise<Alert>
+  delete(id: string, userId: string, userToken?: string): Promise<void>
+  findActiveBySymbol(symbol: string, userToken?: string): Promise<Alert[]>
+  markAsTriggered(id: string, userToken?: string): Promise<void>
 }
 
 // Service interfaces
@@ -61,14 +70,23 @@ export interface UpdateAlertRequest {
 }
 
 export interface IAlertService {
-  getAllAlerts(userId: string): Promise<Alert[]>
-  getAlertById(id: string, userId: string): Promise<Alert>
-  createAlert(userId: string, data: CreateAlertRequest): Promise<Alert>
+  getAllAlerts(userId: string, userToken?: string): Promise<Alert[]>
+  getAlertById(id: string, userId: string, userToken?: string): Promise<Alert>
+  createAlert(
+    userId: string,
+    data: CreateAlertRequest,
+    userToken?: string
+  ): Promise<Alert>
   updateAlert(
     id: string,
     userId: string,
-    data: UpdateAlertRequest
+    data: UpdateAlertRequest,
+    userToken?: string
   ): Promise<Alert>
-  deleteAlert(id: string, userId: string): Promise<void>
-  checkAndTriggerAlerts(symbol: string, currentPrice: number): Promise<void>
+  deleteAlert(id: string, userId: string, userToken?: string): Promise<void>
+  checkAndTriggerAlerts(
+    symbol: string,
+    currentPrice: number,
+    userToken?: string
+  ): Promise<void>
 }

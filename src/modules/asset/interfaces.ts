@@ -44,12 +44,28 @@ export interface Asset {
 }
 
 export interface IAssetRepository {
-  findAllByPortfolioId(portfolioId: string): Promise<Asset[]>
-  findById(id: string, userId: string): Promise<Asset | null>
-  create(data: CreateAssetData): Promise<Asset>
-  update(id: string, userId: string, data: UpdateAssetData): Promise<Asset>
-  delete(id: string, userId: string): Promise<void>
-  existsInUserPortfolio(id: string, userId: string): Promise<boolean>
+  findAllByPortfolioId(
+    portfolioId: string,
+    userToken?: string
+  ): Promise<Asset[]>
+  findById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Asset | null>
+  create(data: CreateAssetData, userToken?: string): Promise<Asset>
+  update(
+    id: string,
+    userId: string,
+    data: UpdateAssetData,
+    userToken?: string
+  ): Promise<Asset>
+  delete(id: string, userId: string, userToken?: string): Promise<void>
+  existsInUserPortfolio(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<boolean>
 }
 
 // Service interfaces
@@ -81,13 +97,22 @@ export interface UpdateAssetRequest {
 }
 
 export interface IAssetService {
-  getAssetsByPortfolioId(portfolioId: string, userId: string): Promise<Asset[]>
-  getAssetById(id: string, userId: string): Promise<Asset>
-  createAsset(userId: string, data: CreateAssetRequest): Promise<Asset>
+  getAssetsByPortfolioId(
+    portfolioId: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Asset[]>
+  getAssetById(id: string, userId: string, userToken?: string): Promise<Asset>
+  createAsset(
+    userId: string,
+    data: CreateAssetRequest,
+    userToken?: string
+  ): Promise<Asset>
   updateAsset(
     id: string,
     userId: string,
-    data: UpdateAssetRequest
+    data: UpdateAssetRequest,
+    userToken?: string
   ): Promise<Asset>
-  deleteAsset(id: string, userId: string): Promise<void>
+  deleteAsset(id: string, userId: string, userToken?: string): Promise<void>
 }

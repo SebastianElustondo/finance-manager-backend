@@ -1,4 +1,5 @@
-import { supabase } from '../../shared/config/config'
+import { createClient } from '@supabase/supabase-js'
+import { config } from '../../shared/config/config'
 import {
   IPortfolioRepository,
   Portfolio,
@@ -7,7 +8,28 @@ import {
 } from './interfaces'
 
 export class PortfolioRepository implements IPortfolioRepository {
-  async findAllByUserId(userId: string): Promise<Portfolio[]> {
+  private getSupabaseClient(userToken?: string) {
+    if (userToken) {
+      // Create client with custom headers to include the user token
+      return createClient(config.supabase.url, config.supabase.anonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+          },
+        },
+      })
+    }
+
+    // Fallback to regular anon client
+    return createClient(config.supabase.url, config.supabase.anonKey)
+  }
+
+  async findAllByUserId(
+    userId: string,
+    userToken?: string
+  ): Promise<Portfolio[]> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('portfolios')
       .select('*')
@@ -21,7 +43,13 @@ export class PortfolioRepository implements IPortfolioRepository {
     return data || []
   }
 
-  async findById(id: string, userId: string): Promise<Portfolio | null> {
+  async findById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Portfolio | null> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('portfolios')
       .select('*')
@@ -39,7 +67,12 @@ export class PortfolioRepository implements IPortfolioRepository {
     return data
   }
 
-  async create(data: CreatePortfolioData): Promise<Portfolio> {
+  async create(
+    data: CreatePortfolioData,
+    userToken?: string
+  ): Promise<Portfolio> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data: portfolio, error } = await supabase
       .from('portfolios')
       .insert([data])
@@ -56,8 +89,11 @@ export class PortfolioRepository implements IPortfolioRepository {
   async update(
     id: string,
     userId: string,
-    data: UpdatePortfolioData
+    data: UpdatePortfolioData,
+    userToken?: string
   ): Promise<Portfolio> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data: portfolio, error } = await supabase
       .from('portfolios')
       .update(data)
@@ -73,7 +109,9 @@ export class PortfolioRepository implements IPortfolioRepository {
     return portfolio
   }
 
-  async delete(id: string, userId: string): Promise<void> {
+  async delete(id: string, userId: string, userToken?: string): Promise<void> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { error } = await supabase
       .from('portfolios')
       .delete()
@@ -85,7 +123,12 @@ export class PortfolioRepository implements IPortfolioRepository {
     }
   }
 
-  async setAllDefaultToFalse(userId: string): Promise<void> {
+  async setAllDefaultToFalse(
+    userId: string,
+    userToken?: string
+  ): Promise<void> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { error } = await supabase
       .from('portfolios')
       .update({ is_default: false })
@@ -96,7 +139,13 @@ export class PortfolioRepository implements IPortfolioRepository {
     }
   }
 
-  async exists(id: string, userId: string): Promise<boolean> {
+  async exists(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<boolean> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('portfolios')
       .select('id')

@@ -1,14 +1,22 @@
 import { Response } from 'express'
+import { IPortfolioService, UpdatePortfolioRequest } from './interfaces'
 import { AuthenticatedRequest } from '../../shared/types'
-import { PortfolioService } from './service'
-import { UpdatePortfolioRequest } from './interfaces'
 
 export class PortfolioController {
-  constructor(private portfolioService: PortfolioService) {}
+  constructor(private portfolioService: IPortfolioService) {}
+
+  private extractUserToken(req: AuthenticatedRequest): string | undefined {
+    const authHeader = req.headers.authorization
+    if (!authHeader) return undefined
+
+    const token = authHeader.split(' ')[1]
+    return token || undefined
+  }
 
   getAllPortfolios = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
 
       if (!userId) {
         return res.status(401).json({
@@ -17,7 +25,10 @@ export class PortfolioController {
         })
       }
 
-      const portfolios = await this.portfolioService.getAllPortfolios(userId)
+      const portfolios = await this.portfolioService.getAllPortfolios(
+        userId,
+        userToken
+      )
 
       res.status(200).json({
         success: true,
@@ -35,6 +46,7 @@ export class PortfolioController {
   getPortfolioById = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const portfolioId = req.params.id
 
       if (!userId) {
@@ -54,7 +66,8 @@ export class PortfolioController {
       try {
         const portfolio = await this.portfolioService.getPortfolioById(
           portfolioId,
-          userId
+          userId,
+          userToken
         )
 
         res.status(200).json({
@@ -85,6 +98,7 @@ export class PortfolioController {
   createPortfolio = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const { name, description, currency, isDefault } = req.body
 
       if (!userId) {
@@ -95,12 +109,16 @@ export class PortfolioController {
       }
 
       try {
-        const portfolio = await this.portfolioService.createPortfolio(userId, {
-          name,
-          description,
-          currency,
-          isDefault,
-        })
+        const portfolio = await this.portfolioService.createPortfolio(
+          userId,
+          {
+            name,
+            description,
+            currency,
+            isDefault,
+          },
+          userToken
+        )
 
         res.status(201).json({
           success: true,
@@ -132,6 +150,7 @@ export class PortfolioController {
   updatePortfolio = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const portfolioId = req.params.id
       const { name, description, currency, isDefault } = req.body
 
@@ -160,7 +179,8 @@ export class PortfolioController {
         const portfolio = await this.portfolioService.updatePortfolio(
           portfolioId,
           userId,
-          updateData
+          updateData,
+          userToken
         )
 
         res.status(200).json({
@@ -192,6 +212,7 @@ export class PortfolioController {
   deletePortfolio = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const portfolioId = req.params.id
 
       if (!userId) {
@@ -209,7 +230,11 @@ export class PortfolioController {
       }
 
       try {
-        await this.portfolioService.deletePortfolio(portfolioId, userId)
+        await this.portfolioService.deletePortfolio(
+          portfolioId,
+          userId,
+          userToken
+        )
 
         res.status(200).json({
           success: true,

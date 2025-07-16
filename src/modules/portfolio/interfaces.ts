@@ -29,17 +29,22 @@ export interface Portfolio {
 }
 
 export interface IPortfolioRepository {
-  findAllByUserId(userId: string): Promise<Portfolio[]>
-  findById(id: string, userId: string): Promise<Portfolio | null>
-  create(data: CreatePortfolioData): Promise<Portfolio>
+  findAllByUserId(userId: string, userToken?: string): Promise<Portfolio[]>
+  findById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Portfolio | null>
+  create(data: CreatePortfolioData, userToken?: string): Promise<Portfolio>
   update(
     id: string,
     userId: string,
-    data: UpdatePortfolioData
+    data: UpdatePortfolioData,
+    userToken?: string
   ): Promise<Portfolio>
-  delete(id: string, userId: string): Promise<void>
-  setAllDefaultToFalse(userId: string): Promise<void>
-  exists(id: string, userId: string): Promise<boolean>
+  delete(id: string, userId: string, userToken?: string): Promise<void>
+  setAllDefaultToFalse(userId: string, userToken?: string): Promise<void>
+  exists(id: string, userId: string, userToken?: string): Promise<boolean>
 }
 
 // Service interfaces
@@ -58,16 +63,22 @@ export interface UpdatePortfolioRequest {
 }
 
 export interface IPortfolioService {
-  getAllPortfolios(userId: string): Promise<Portfolio[]>
-  getPortfolioById(id: string, userId: string): Promise<Portfolio>
+  getAllPortfolios(userId: string, userToken?: string): Promise<Portfolio[]>
+  getPortfolioById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Portfolio>
   createPortfolio(
     userId: string,
-    data: CreatePortfolioRequest
+    data: CreatePortfolioRequest,
+    userToken?: string
   ): Promise<Portfolio>
   updatePortfolio(
     id: string,
     userId: string,
-    data: UpdatePortfolioRequest
+    data: UpdatePortfolioRequest,
+    userToken?: string
   ): Promise<Portfolio>
-  deletePortfolio(id: string, userId: string): Promise<void>
+  deletePortfolio(id: string, userId: string, userToken?: string): Promise<void>
 }

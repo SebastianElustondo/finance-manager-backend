@@ -1,14 +1,22 @@
 import { Response } from 'express'
 import { AuthenticatedRequest } from '../../shared/types'
-import { AlertService } from './service'
-import { UpdateAlertRequest } from './interfaces'
+import { IAlertService, UpdateAlertRequest } from './interfaces'
 
 export class AlertController {
-  constructor(private alertService: AlertService) {}
+  constructor(private alertService: IAlertService) {}
+
+  private extractUserToken(req: AuthenticatedRequest): string | undefined {
+    const authHeader = req.headers.authorization
+    if (!authHeader) return undefined
+
+    const token = authHeader.split(' ')[1]
+    return token || undefined
+  }
 
   getAllAlerts = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
 
       if (!userId) {
         res.status(401).json({
@@ -18,7 +26,7 @@ export class AlertController {
         return
       }
 
-      const alerts = await this.alertService.getAllAlerts(userId)
+      const alerts = await this.alertService.getAllAlerts(userId, userToken)
 
       res.status(200).json({
         success: true,
@@ -37,6 +45,7 @@ export class AlertController {
   getAlertById = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const alertId = req.params.id
 
       if (!userId) {
@@ -54,7 +63,11 @@ export class AlertController {
       }
 
       try {
-        const alert = await this.alertService.getAlertById(alertId, userId)
+        const alert = await this.alertService.getAlertById(
+          alertId,
+          userId,
+          userToken
+        )
 
         res.status(200).json({
           success: true,
@@ -84,6 +97,7 @@ export class AlertController {
   createAlert = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const { symbol, type, condition, isActive, message } = req.body
 
       if (!userId) {
@@ -94,13 +108,17 @@ export class AlertController {
       }
 
       try {
-        const alert = await this.alertService.createAlert(userId, {
-          symbol,
-          type,
-          condition: parseFloat(condition),
-          isActive,
-          message,
-        })
+        const alert = await this.alertService.createAlert(
+          userId,
+          {
+            symbol,
+            type,
+            condition,
+            isActive,
+            message,
+          },
+          userToken
+        )
 
         res.status(201).json({
           success: true,
@@ -111,7 +129,8 @@ export class AlertController {
         if (
           serviceError instanceof Error &&
           (serviceError.message.includes('required') ||
-            serviceError.message.includes('must be greater'))
+            serviceError.message.includes('Invalid') ||
+            serviceError.message.includes('must be'))
         ) {
           return res.status(400).json({
             success: false,
@@ -132,6 +151,7 @@ export class AlertController {
   updateAlert = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const alertId = req.params.id
       const { symbol, type, condition, isActive, message } = req.body
 
@@ -150,18 +170,19 @@ export class AlertController {
       }
 
       try {
-        const updateData: UpdateAlertRequest = {}
-        if (symbol !== undefined) updateData.symbol = symbol
-        if (type !== undefined) updateData.type = type
-        if (condition !== undefined)
-          updateData.condition = parseFloat(condition)
-        if (isActive !== undefined) updateData.isActive = isActive
-        if (message !== undefined) updateData.message = message
+        const updateData: UpdateAlertRequest = {
+          symbol,
+          type,
+          condition,
+          isActive,
+          message,
+        }
 
         const alert = await this.alertService.updateAlert(
           alertId,
           userId,
-          updateData
+          updateData,
+          userToken
         )
 
         res.status(200).json({
@@ -181,7 +202,9 @@ export class AlertController {
         }
         if (
           serviceError instanceof Error &&
-          serviceError.message.includes('must be greater')
+          (serviceError.message.includes('required') ||
+            serviceError.message.includes('Invalid') ||
+            serviceError.message.includes('must be'))
         ) {
           return res.status(400).json({
             success: false,
@@ -202,6 +225,7 @@ export class AlertController {
   deleteAlert = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const alertId = req.params.id
 
       if (!userId) {
@@ -219,7 +243,7 @@ export class AlertController {
       }
 
       try {
-        await this.alertService.deleteAlert(alertId, userId)
+        await this.alertService.deleteAlert(alertId, userId, userToken)
 
         res.status(200).json({
           success: true,

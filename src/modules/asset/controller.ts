@@ -1,15 +1,27 @@
 import { Response } from 'express'
 import { AuthenticatedRequest } from '../../shared/types'
-import { AssetService } from './service'
-import { UpdateAssetRequest, CreateAssetRequest } from './interfaces'
+import {
+  IAssetService,
+  UpdateAssetRequest,
+  CreateAssetRequest,
+} from './interfaces'
 
 export class AssetController {
-  constructor(private assetService: AssetService) {}
+  constructor(private assetService: IAssetService) {}
+
+  private extractUserToken(req: AuthenticatedRequest): string | undefined {
+    const authHeader = req.headers.authorization
+    if (!authHeader) return undefined
+
+    const token = authHeader.split(' ')[1]
+    return token || undefined
+  }
 
   getAssetsByPortfolioId = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
-      const { portfolioId } = req.query
+      const userToken = this.extractUserToken(req)
+      const portfolioId = req.query.portfolioId as string
 
       if (!userId) {
         return res.status(401).json({
@@ -18,7 +30,7 @@ export class AssetController {
         })
       }
 
-      if (!portfolioId || typeof portfolioId !== 'string') {
+      if (!portfolioId) {
         return res.status(400).json({
           success: false,
           error: 'Portfolio ID is required',
@@ -28,7 +40,8 @@ export class AssetController {
       try {
         const assets = await this.assetService.getAssetsByPortfolioId(
           portfolioId,
-          userId
+          userId,
+          userToken
         )
 
         res.status(200).json({
@@ -38,7 +51,7 @@ export class AssetController {
       } catch (serviceError: unknown) {
         if (
           serviceError instanceof Error &&
-          serviceError.message === 'Portfolio not found'
+          serviceError.message.includes('Portfolio not found')
         ) {
           return res.status(404).json({
             success: false,
@@ -59,6 +72,7 @@ export class AssetController {
   getAssetById = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const assetId = req.params.id
 
       if (!userId) {
@@ -76,7 +90,11 @@ export class AssetController {
       }
 
       try {
-        const asset = await this.assetService.getAssetById(assetId, userId)
+        const asset = await this.assetService.getAssetById(
+          assetId,
+          userId,
+          userToken
+        )
 
         res.status(200).json({
           success: true,
@@ -106,19 +124,8 @@ export class AssetController {
   createAsset = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
-      const {
-        portfolioId,
-        symbol,
-        name,
-        type,
-        quantity,
-        purchasePrice,
-        currentPrice,
-        purchaseDate,
-        exchange,
-        currency,
-        notes,
-      } = req.body
+      const userToken = this.extractUserToken(req)
+      const assetData: CreateAssetRequest = req.body
 
       if (!userId) {
         return res.status(401).json({
@@ -128,24 +135,11 @@ export class AssetController {
       }
 
       try {
-        const createData: CreateAssetRequest = {
-          portfolioId,
-          symbol,
-          name,
-          type,
-          quantity: parseFloat(quantity),
-          purchasePrice: parseFloat(purchasePrice),
-          purchaseDate,
-          exchange,
-          currency,
-          notes,
-        }
-
-        if (currentPrice) {
-          createData.currentPrice = parseFloat(currentPrice)
-        }
-
-        const asset = await this.assetService.createAsset(userId, createData)
+        const asset = await this.assetService.createAsset(
+          userId,
+          assetData,
+          userToken
+        )
 
         res.status(201).json({
           success: true,
@@ -157,20 +151,12 @@ export class AssetController {
           serviceError instanceof Error &&
           (serviceError.message.includes('required') ||
             serviceError.message.includes('must be greater') ||
-            serviceError.message.includes('Portfolio not found'))
+            serviceError.message.includes('Invalid') ||
+            serviceError.message.includes('not found'))
         ) {
           return res.status(400).json({
             success: false,
             error: serviceError.message,
-          })
-        }
-        if (
-          serviceError instanceof Error &&
-          serviceError.message === 'Portfolio not found'
-        ) {
-          return res.status(404).json({
-            success: false,
-            error: 'Portfolio not found',
           })
         }
         throw serviceError
@@ -187,19 +173,9 @@ export class AssetController {
   updateAsset = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const assetId = req.params.id
-      const {
-        symbol,
-        name,
-        type,
-        quantity,
-        purchasePrice,
-        currentPrice,
-        purchaseDate,
-        exchange,
-        currency,
-        notes,
-      } = req.body
+      const updateData: UpdateAssetRequest = req.body
 
       if (!userId) {
         return res.status(401).json({
@@ -216,24 +192,11 @@ export class AssetController {
       }
 
       try {
-        const updateData: UpdateAssetRequest = {}
-        if (symbol !== undefined) updateData.symbol = symbol
-        if (name !== undefined) updateData.name = name
-        if (type !== undefined) updateData.type = type
-        if (quantity !== undefined) updateData.quantity = parseFloat(quantity)
-        if (purchasePrice !== undefined)
-          updateData.purchasePrice = parseFloat(purchasePrice)
-        if (currentPrice !== undefined)
-          updateData.currentPrice = parseFloat(currentPrice)
-        if (purchaseDate !== undefined) updateData.purchaseDate = purchaseDate
-        if (exchange !== undefined) updateData.exchange = exchange
-        if (currency !== undefined) updateData.currency = currency
-        if (notes !== undefined) updateData.notes = notes
-
         const asset = await this.assetService.updateAsset(
           assetId,
           userId,
-          updateData
+          updateData,
+          userToken
         )
 
         res.status(200).json({
@@ -253,7 +216,8 @@ export class AssetController {
         }
         if (
           serviceError instanceof Error &&
-          serviceError.message.includes('must be greater')
+          (serviceError.message.includes('must be greater') ||
+            serviceError.message.includes('Invalid'))
         ) {
           return res.status(400).json({
             success: false,
@@ -274,6 +238,7 @@ export class AssetController {
   deleteAsset = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id
+      const userToken = this.extractUserToken(req)
       const assetId = req.params.id
 
       if (!userId) {
@@ -291,7 +256,7 @@ export class AssetController {
       }
 
       try {
-        await this.assetService.deleteAsset(assetId, userId)
+        await this.assetService.deleteAsset(assetId, userId, userToken)
 
         res.status(200).json({
           success: true,

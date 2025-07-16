@@ -1,4 +1,5 @@
-import { supabase } from '../../shared/config/config'
+import { createClient } from '@supabase/supabase-js'
+import { config } from '../../shared/config/config'
 import {
   IAlertRepository,
   Alert,
@@ -7,7 +8,25 @@ import {
 } from './interfaces'
 
 export class AlertRepository implements IAlertRepository {
-  async findAllByUserId(userId: string): Promise<Alert[]> {
+  private getSupabaseClient(userToken?: string) {
+    if (userToken) {
+      // Create client with custom headers to include the user token
+      return createClient(config.supabase.url, config.supabase.anonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+          },
+        },
+      })
+    }
+
+    // Fallback to regular anon client
+    return createClient(config.supabase.url, config.supabase.anonKey)
+  }
+
+  async findAllByUserId(userId: string, userToken?: string): Promise<Alert[]> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('alerts')
       .select('*')
@@ -21,7 +40,13 @@ export class AlertRepository implements IAlertRepository {
     return data || []
   }
 
-  async findById(id: string, userId: string): Promise<Alert | null> {
+  async findById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Alert | null> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('alerts')
       .select('*')
@@ -39,7 +64,9 @@ export class AlertRepository implements IAlertRepository {
     return data
   }
 
-  async create(data: CreateAlertData): Promise<Alert> {
+  async create(data: CreateAlertData, userToken?: string): Promise<Alert> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data: alert, error } = await supabase
       .from('alerts')
       .insert([data])
@@ -56,8 +83,11 @@ export class AlertRepository implements IAlertRepository {
   async update(
     id: string,
     userId: string,
-    data: UpdateAlertData
+    data: UpdateAlertData,
+    userToken?: string
   ): Promise<Alert> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data: alert, error } = await supabase
       .from('alerts')
       .update(data)
@@ -73,7 +103,9 @@ export class AlertRepository implements IAlertRepository {
     return alert
   }
 
-  async delete(id: string, userId: string): Promise<void> {
+  async delete(id: string, userId: string, userToken?: string): Promise<void> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { error } = await supabase
       .from('alerts')
       .delete()
@@ -85,11 +117,16 @@ export class AlertRepository implements IAlertRepository {
     }
   }
 
-  async findActiveBySymbol(symbol: string): Promise<Alert[]> {
+  async findActiveBySymbol(
+    symbol: string,
+    userToken?: string
+  ): Promise<Alert[]> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('alerts')
       .select('*')
-      .eq('symbol', symbol.toUpperCase())
+      .eq('symbol', symbol)
       .eq('is_active', true)
       .eq('is_triggered', false)
 
@@ -100,7 +137,9 @@ export class AlertRepository implements IAlertRepository {
     return data || []
   }
 
-  async markAsTriggered(id: string): Promise<void> {
+  async markAsTriggered(id: string, userToken?: string): Promise<void> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { error } = await supabase
       .from('alerts')
       .update({

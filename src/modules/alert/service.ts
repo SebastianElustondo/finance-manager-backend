@@ -10,20 +10,24 @@ import {
 export class AlertService implements IAlertService {
   constructor(private alertRepository: IAlertRepository) {}
 
-  async getAllAlerts(userId: string): Promise<Alert[]> {
+  async getAllAlerts(userId: string, userToken?: string): Promise<Alert[]> {
     if (!userId) {
       throw new Error('User ID is required')
     }
 
-    return await this.alertRepository.findAllByUserId(userId)
+    return await this.alertRepository.findAllByUserId(userId, userToken)
   }
 
-  async getAlertById(id: string, userId: string): Promise<Alert> {
+  async getAlertById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Alert> {
     if (!id || !userId) {
       throw new Error('Alert ID and User ID are required')
     }
 
-    const alert = await this.alertRepository.findById(id, userId)
+    const alert = await this.alertRepository.findById(id, userId, userToken)
     if (!alert) {
       throw new Error('Alert not found')
     }
@@ -31,91 +35,150 @@ export class AlertService implements IAlertService {
     return alert
   }
 
-  async createAlert(userId: string, data: CreateAlertRequest): Promise<Alert> {
+  async createAlert(
+    userId: string,
+    data: CreateAlertRequest,
+    userToken?: string
+  ): Promise<Alert> {
     if (!userId) {
       throw new Error('User ID is required')
     }
 
-    // Validate required fields
-    if (
-      !data.symbol ||
-      !data.type ||
-      data.condition === undefined ||
-      !data.message
-    ) {
-      throw new Error('Required fields: symbol, type, condition, message')
+    if (!data.symbol?.trim()) {
+      throw new Error('Symbol is required')
     }
 
-    if (data.condition <= 0) {
-      throw new Error('Condition must be greater than 0')
+    if (!data.type) {
+      throw new Error('Alert type is required')
+    }
+
+    if (!data.message?.trim()) {
+      throw new Error('Alert message is required')
+    }
+
+    if (data.condition === undefined || data.condition <= 0) {
+      throw new Error('Valid condition value is required')
+    }
+
+    const validTypes = [
+      'price_above',
+      'price_below',
+      'price_change_up',
+      'price_change_down',
+    ]
+    if (!validTypes.includes(data.type)) {
+      throw new Error(
+        `Invalid alert type. Must be one of: ${validTypes.join(', ')}`
+      )
     }
 
     const alertData = {
       user_id: userId,
-      symbol: data.symbol.toUpperCase(),
+      symbol: data.symbol.trim().toUpperCase(),
       type: data.type,
       condition: data.condition,
-      is_active: data.isActive !== undefined ? data.isActive : true,
+      is_active: data.isActive ?? true,
       is_triggered: false,
       message: data.message.trim(),
     }
 
-    return await this.alertRepository.create(alertData)
+    return await this.alertRepository.create(alertData, userToken)
   }
 
   async updateAlert(
     id: string,
     userId: string,
-    data: UpdateAlertRequest
+    data: UpdateAlertRequest,
+    userToken?: string
   ): Promise<Alert> {
     if (!id || !userId) {
       throw new Error('Alert ID and User ID are required')
     }
 
     // Check if alert exists and belongs to user
-    const existingAlert = await this.alertRepository.findById(id, userId)
+    const existingAlert = await this.alertRepository.findById(
+      id,
+      userId,
+      userToken
+    )
     if (!existingAlert) {
       throw new Error('Alert not found')
     }
 
-    // Validate updated fields
-    if (data.condition !== undefined && data.condition <= 0) {
-      throw new Error('Condition must be greater than 0')
+    const updateData: UpdateAlertData = {}
+
+    if (data.symbol !== undefined) {
+      updateData.symbol = data.symbol.trim().toUpperCase()
     }
 
-    const updateData: UpdateAlertData = {}
-    if (data.symbol !== undefined) updateData.symbol = data.symbol.toUpperCase()
-    if (data.type !== undefined) updateData.type = data.type
-    if (data.condition !== undefined) updateData.condition = data.condition
-    if (data.isActive !== undefined) updateData.is_active = data.isActive
-    if (data.message !== undefined) updateData.message = data.message.trim()
+    if (data.type !== undefined) {
+      const validTypes = [
+        'price_above',
+        'price_below',
+        'price_change_up',
+        'price_change_down',
+      ]
+      if (!validTypes.includes(data.type)) {
+        throw new Error(
+          `Invalid alert type. Must be one of: ${validTypes.join(', ')}`
+        )
+      }
+      updateData.type = data.type
+    }
 
-    return await this.alertRepository.update(id, userId, updateData)
+    if (data.condition !== undefined) {
+      if (data.condition <= 0) {
+        throw new Error('Condition must be greater than 0')
+      }
+      updateData.condition = data.condition
+    }
+
+    if (data.isActive !== undefined) {
+      updateData.is_active = data.isActive
+    }
+
+    if (data.message !== undefined) {
+      updateData.message = data.message.trim()
+    }
+
+    return await this.alertRepository.update(id, userId, updateData, userToken)
   }
 
-  async deleteAlert(id: string, userId: string): Promise<void> {
+  async deleteAlert(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<void> {
     if (!id || !userId) {
       throw new Error('Alert ID and User ID are required')
     }
 
     // Check if alert exists and belongs to user
-    const existingAlert = await this.alertRepository.findById(id, userId)
+    const existingAlert = await this.alertRepository.findById(
+      id,
+      userId,
+      userToken
+    )
     if (!existingAlert) {
       throw new Error('Alert not found')
     }
 
-    await this.alertRepository.delete(id, userId)
+    await this.alertRepository.delete(id, userId, userToken)
   }
 
   async checkAndTriggerAlerts(
     symbol: string,
-    currentPrice: number
+    currentPrice: number,
+    userToken?: string
   ): Promise<void> {
     if (!symbol || currentPrice <= 0) {
       throw new Error('Valid symbol and price are required')
     }
 
-    const activeAlerts = await this.alertRepository.findActiveBySymbol(symbol)
+    const activeAlerts = await this.alertRepository.findActiveBySymbol(
+      symbol,
+      userToken
+    )
 
     for (const alert of activeAlerts) {
       let shouldTrigger = false
@@ -141,7 +204,7 @@ export class AlertService implements IAlertService {
       }
 
       if (shouldTrigger) {
-        await this.alertRepository.markAsTriggered(alert.id)
+        await this.alertRepository.markAsTriggered(alert.id, userToken)
         // Here you could add notification logic (email, push notification, etc.)
         console.log(`Alert triggered for ${symbol}: ${alert.message}`)
       }

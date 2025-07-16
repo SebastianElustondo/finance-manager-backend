@@ -17,30 +17,39 @@ export class AssetService implements IAssetService {
 
   async getAssetsByPortfolioId(
     portfolioId: string,
-    userId: string
+    userId: string,
+    userToken?: string
   ): Promise<Asset[]> {
     if (!portfolioId || !userId) {
       throw new Error('Portfolio ID and User ID are required')
     }
 
     // Verify portfolio belongs to user
-    const portfolioExists = await this.portfolioRepository.exists(
+    const portfolio = await this.portfolioRepository.findById(
       portfolioId,
-      userId
+      userId,
+      userToken
     )
-    if (!portfolioExists) {
-      throw new Error('Portfolio not found')
+    if (!portfolio) {
+      throw new Error('Portfolio not found or does not belong to user')
     }
 
-    return await this.assetRepository.findAllByPortfolioId(portfolioId)
+    return await this.assetRepository.findAllByPortfolioId(
+      portfolioId,
+      userToken
+    )
   }
 
-  async getAssetById(id: string, userId: string): Promise<Asset> {
+  async getAssetById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Asset> {
     if (!id || !userId) {
       throw new Error('Asset ID and User ID are required')
     }
 
-    const asset = await this.assetRepository.findById(id, userId)
+    const asset = await this.assetRepository.findById(id, userId, userToken)
     if (!asset) {
       throw new Error('Asset not found')
     }
@@ -48,51 +57,74 @@ export class AssetService implements IAssetService {
     return asset
   }
 
-  async createAsset(userId: string, data: CreateAssetRequest): Promise<Asset> {
+  async createAsset(
+    userId: string,
+    data: CreateAssetRequest,
+    userToken?: string
+  ): Promise<Asset> {
     if (!userId) {
       throw new Error('User ID is required')
     }
 
-    // Validate required fields
-    if (
-      !data.portfolioId ||
-      !data.symbol ||
-      !data.name ||
-      !data.type ||
-      data.quantity === undefined ||
-      data.purchasePrice === undefined
-    ) {
-      throw new Error(
-        'Required fields: portfolioId, symbol, name, type, quantity, purchasePrice'
-      )
-    }
-
-    if (data.quantity <= 0) {
-      throw new Error('Quantity must be greater than 0')
-    }
-
-    if (data.purchasePrice <= 0) {
-      throw new Error('Purchase price must be greater than 0')
+    if (!data.portfolioId) {
+      throw new Error('Portfolio ID is required')
     }
 
     // Verify portfolio belongs to user
-    const portfolioExists = await this.portfolioRepository.exists(
+    const portfolio = await this.portfolioRepository.findById(
       data.portfolioId,
-      userId
+      userId,
+      userToken
     )
-    if (!portfolioExists) {
-      throw new Error('Portfolio not found')
+    if (!portfolio) {
+      throw new Error('Portfolio not found or does not belong to user')
+    }
+
+    if (!data.symbol?.trim()) {
+      throw new Error('Symbol is required')
+    }
+
+    if (!data.name?.trim()) {
+      throw new Error('Asset name is required')
+    }
+
+    if (!data.type) {
+      throw new Error('Asset type is required')
+    }
+
+    if (!data.quantity || data.quantity <= 0) {
+      throw new Error('Quantity must be greater than 0')
+    }
+
+    if (!data.purchasePrice || data.purchasePrice <= 0) {
+      throw new Error('Purchase price must be greater than 0')
+    }
+
+    const validTypes = [
+      'stock',
+      'cryptocurrency',
+      'bond',
+      'etf',
+      'commodity',
+      'real_estate',
+      'other',
+    ]
+    if (!validTypes.includes(data.type)) {
+      throw new Error(
+        `Invalid asset type. Must be one of: ${validTypes.join(', ')}`
+      )
     }
 
     const assetData: CreateAssetData = {
       portfolio_id: data.portfolioId,
-      symbol: data.symbol.toUpperCase(),
+      symbol: data.symbol.trim().toUpperCase(),
       name: data.name.trim(),
       type: data.type,
       quantity: data.quantity,
       purchase_price: data.purchasePrice,
       current_price: data.currentPrice || data.purchasePrice,
-      purchase_date: data.purchaseDate || new Date().toISOString(),
+      purchase_date:
+        data.purchaseDate || new Date().toISOString().split('T')[0],
       currency: data.currency || 'USD',
     }
 
@@ -104,49 +136,81 @@ export class AssetService implements IAssetService {
       assetData.notes = data.notes.trim()
     }
 
-    return await this.assetRepository.create(assetData)
+    return await this.assetRepository.create(assetData, userToken)
   }
 
   async updateAsset(
     id: string,
     userId: string,
-    data: UpdateAssetRequest
+    data: UpdateAssetRequest,
+    userToken?: string
   ): Promise<Asset> {
     if (!id || !userId) {
       throw new Error('Asset ID and User ID are required')
     }
 
-    // Check if asset exists and belongs to user's portfolio
-    const exists = await this.assetRepository.existsInUserPortfolio(id, userId)
-    if (!exists) {
+    // Check if asset exists and belongs to user
+    const existingAsset = await this.assetRepository.findById(
+      id,
+      userId,
+      userToken
+    )
+    if (!existingAsset) {
       throw new Error('Asset not found')
     }
 
-    // Validate updated fields
-    if (data.quantity !== undefined && data.quantity <= 0) {
-      throw new Error('Quantity must be greater than 0')
-    }
-
-    if (data.purchasePrice !== undefined && data.purchasePrice <= 0) {
-      throw new Error('Purchase price must be greater than 0')
-    }
-
-    if (data.currentPrice !== undefined && data.currentPrice <= 0) {
-      throw new Error('Current price must be greater than 0')
-    }
-
     const updateData: UpdateAssetData = {}
-    if (data.symbol !== undefined) updateData.symbol = data.symbol.toUpperCase()
-    if (data.name !== undefined) updateData.name = data.name.trim()
-    if (data.type !== undefined) updateData.type = data.type
-    if (data.quantity !== undefined) updateData.quantity = data.quantity
-    if (data.purchasePrice !== undefined)
+
+    if (data.symbol !== undefined) {
+      updateData.symbol = data.symbol.trim().toUpperCase()
+    }
+
+    if (data.name !== undefined) {
+      updateData.name = data.name.trim()
+    }
+
+    if (data.type !== undefined) {
+      const validTypes = [
+        'stock',
+        'cryptocurrency',
+        'bond',
+        'etf',
+        'commodity',
+        'real_estate',
+        'other',
+      ]
+      if (!validTypes.includes(data.type)) {
+        throw new Error(
+          `Invalid asset type. Must be one of: ${validTypes.join(', ')}`
+        )
+      }
+      updateData.type = data.type
+    }
+
+    if (data.quantity !== undefined) {
+      if (data.quantity <= 0) {
+        throw new Error('Quantity must be greater than 0')
+      }
+      updateData.quantity = data.quantity
+    }
+
+    if (data.purchasePrice !== undefined) {
+      if (data.purchasePrice <= 0) {
+        throw new Error('Purchase price must be greater than 0')
+      }
       updateData.purchase_price = data.purchasePrice
-    if (data.currentPrice !== undefined)
+    }
+
+    if (data.currentPrice !== undefined) {
+      if (data.currentPrice <= 0) {
+        throw new Error('Current price must be greater than 0')
+      }
       updateData.current_price = data.currentPrice
-    if (data.purchaseDate !== undefined)
+    }
+
+    if (data.purchaseDate !== undefined) {
       updateData.purchase_date = data.purchaseDate
-    if (data.currency !== undefined) updateData.currency = data.currency
+    }
 
     if (data.exchange !== undefined) {
       const trimmedExchange = data.exchange?.trim()
@@ -155,27 +219,36 @@ export class AssetService implements IAssetService {
       }
     }
 
-    if (data.notes !== undefined) {
-      const trimmedNotes = data.notes?.trim()
-      if (trimmedNotes) {
-        updateData.notes = trimmedNotes
-      }
+    if (data.currency !== undefined) {
+      updateData.currency = data.currency
     }
 
-    return await this.assetRepository.update(id, userId, updateData)
+    if (data.notes !== undefined) {
+      updateData.notes = data.notes?.trim()
+    }
+
+    return await this.assetRepository.update(id, userId, updateData, userToken)
   }
 
-  async deleteAsset(id: string, userId: string): Promise<void> {
+  async deleteAsset(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<void> {
     if (!id || !userId) {
       throw new Error('Asset ID and User ID are required')
     }
 
-    // Check if asset exists and belongs to user's portfolio
-    const exists = await this.assetRepository.existsInUserPortfolio(id, userId)
+    // Check if asset exists and belongs to user
+    const exists = await this.assetRepository.existsInUserPortfolio(
+      id,
+      userId,
+      userToken
+    )
     if (!exists) {
       throw new Error('Asset not found')
     }
 
-    await this.assetRepository.delete(id, userId)
+    await this.assetRepository.delete(id, userId, userToken)
   }
 }

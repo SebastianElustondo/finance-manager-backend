@@ -1,4 +1,5 @@
-import { supabase } from '../../shared/config/config'
+import { createClient } from '@supabase/supabase-js'
+import { config } from '../../shared/config/config'
 import {
   IAssetRepository,
   Asset,
@@ -7,7 +8,28 @@ import {
 } from './interfaces'
 
 export class AssetRepository implements IAssetRepository {
-  async findAllByPortfolioId(portfolioId: string): Promise<Asset[]> {
+  private getSupabaseClient(userToken?: string) {
+    if (userToken) {
+      // Create client with custom headers to include the user token
+      return createClient(config.supabase.url, config.supabase.anonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+          },
+        },
+      })
+    }
+
+    // Fallback to regular anon client
+    return createClient(config.supabase.url, config.supabase.anonKey)
+  }
+
+  async findAllByPortfolioId(
+    portfolioId: string,
+    userToken?: string
+  ): Promise<Asset[]> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('assets')
       .select('*')
@@ -21,7 +43,13 @@ export class AssetRepository implements IAssetRepository {
     return data || []
   }
 
-  async findById(id: string, userId: string): Promise<Asset | null> {
+  async findById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Asset | null> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('assets')
       .select('*, portfolios!inner(user_id)')
@@ -39,7 +67,9 @@ export class AssetRepository implements IAssetRepository {
     return data
   }
 
-  async create(data: CreateAssetData): Promise<Asset> {
+  async create(data: CreateAssetData, userToken?: string): Promise<Asset> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data: asset, error } = await supabase
       .from('assets')
       .insert([data])
@@ -56,9 +86,18 @@ export class AssetRepository implements IAssetRepository {
   async update(
     id: string,
     userId: string,
-    data: UpdateAssetData
+    data: UpdateAssetData,
+    userToken?: string
   ): Promise<Asset> {
-    const { data: asset, error } = await supabase
+    const supabase = this.getSupabaseClient(userToken)
+
+    // First verify the asset belongs to the user
+    const asset = await this.findById(id, userId, userToken)
+    if (!asset) {
+      throw new Error('Asset not found or does not belong to user')
+    }
+
+    const { data: updatedAsset, error } = await supabase
       .from('assets')
       .update(data)
       .eq('id', id)
@@ -69,10 +108,18 @@ export class AssetRepository implements IAssetRepository {
       throw new Error(`Failed to update asset: ${error.message}`)
     }
 
-    return asset
+    return updatedAsset
   }
 
-  async delete(id: string, _userId: string): Promise<void> {
+  async delete(id: string, userId: string, userToken?: string): Promise<void> {
+    const supabase = this.getSupabaseClient(userToken)
+
+    // First verify the asset belongs to the user
+    const asset = await this.findById(id, userId, userToken)
+    if (!asset) {
+      throw new Error('Asset not found or does not belong to user')
+    }
+
     const { error } = await supabase.from('assets').delete().eq('id', id)
 
     if (error) {
@@ -80,7 +127,13 @@ export class AssetRepository implements IAssetRepository {
     }
   }
 
-  async existsInUserPortfolio(id: string, userId: string): Promise<boolean> {
+  async existsInUserPortfolio(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<boolean> {
+    const supabase = this.getSupabaseClient(userToken)
+
     const { data, error } = await supabase
       .from('assets')
       .select('id, portfolios!inner(user_id)')

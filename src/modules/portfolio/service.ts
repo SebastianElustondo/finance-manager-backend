@@ -11,20 +11,31 @@ import {
 export class PortfolioService implements IPortfolioService {
   constructor(private portfolioRepository: IPortfolioRepository) {}
 
-  async getAllPortfolios(userId: string): Promise<Portfolio[]> {
+  async getAllPortfolios(
+    userId: string,
+    userToken?: string
+  ): Promise<Portfolio[]> {
     if (!userId) {
       throw new Error('User ID is required')
     }
 
-    return await this.portfolioRepository.findAllByUserId(userId)
+    return await this.portfolioRepository.findAllByUserId(userId, userToken)
   }
 
-  async getPortfolioById(id: string, userId: string): Promise<Portfolio> {
+  async getPortfolioById(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<Portfolio> {
     if (!id || !userId) {
       throw new Error('Portfolio ID and User ID are required')
     }
 
-    const portfolio = await this.portfolioRepository.findById(id, userId)
+    const portfolio = await this.portfolioRepository.findById(
+      id,
+      userId,
+      userToken
+    )
     if (!portfolio) {
       throw new Error('Portfolio not found')
     }
@@ -34,7 +45,8 @@ export class PortfolioService implements IPortfolioService {
 
   async createPortfolio(
     userId: string,
-    data: CreatePortfolioRequest
+    data: CreatePortfolioRequest,
+    userToken?: string
   ): Promise<Portfolio> {
     if (!userId) {
       throw new Error('User ID is required')
@@ -46,7 +58,7 @@ export class PortfolioService implements IPortfolioService {
 
     // If this is set as default, update all other portfolios to not be default
     if (data.isDefault) {
-      await this.portfolioRepository.setAllDefaultToFalse(userId)
+      await this.portfolioRepository.setAllDefaultToFalse(userId, userToken)
     }
 
     const portfolioData: CreatePortfolioData = {
@@ -61,27 +73,28 @@ export class PortfolioService implements IPortfolioService {
       portfolioData.description = data.description.trim()
     }
 
-    return await this.portfolioRepository.create(portfolioData)
+    return await this.portfolioRepository.create(portfolioData, userToken)
   }
 
   async updatePortfolio(
     id: string,
     userId: string,
-    data: UpdatePortfolioRequest
+    data: UpdatePortfolioRequest,
+    userToken?: string
   ): Promise<Portfolio> {
     if (!id || !userId) {
       throw new Error('Portfolio ID and User ID are required')
     }
 
     // Check if portfolio exists and belongs to user
-    const exists = await this.portfolioRepository.exists(id, userId)
+    const exists = await this.portfolioRepository.exists(id, userId, userToken)
     if (!exists) {
       throw new Error('Portfolio not found')
     }
 
     // If this is set as default, update all other portfolios to not be default
     if (data.isDefault) {
-      await this.portfolioRepository.setAllDefaultToFalse(userId)
+      await this.portfolioRepository.setAllDefaultToFalse(userId, userToken)
     }
 
     const updateData: UpdatePortfolioData = {}
@@ -91,20 +104,29 @@ export class PortfolioService implements IPortfolioService {
     if (data.currency !== undefined) updateData.currency = data.currency
     if (data.isDefault !== undefined) updateData.is_default = data.isDefault
 
-    return await this.portfolioRepository.update(id, userId, updateData)
+    return await this.portfolioRepository.update(
+      id,
+      userId,
+      updateData,
+      userToken
+    )
   }
 
-  async deletePortfolio(id: string, userId: string): Promise<void> {
+  async deletePortfolio(
+    id: string,
+    userId: string,
+    userToken?: string
+  ): Promise<void> {
     if (!id || !userId) {
       throw new Error('Portfolio ID and User ID are required')
     }
 
     // Check if portfolio exists and belongs to user
-    const exists = await this.portfolioRepository.exists(id, userId)
+    const exists = await this.portfolioRepository.exists(id, userId, userToken)
     if (!exists) {
       throw new Error('Portfolio not found')
     }
 
-    await this.portfolioRepository.delete(id, userId)
+    await this.portfolioRepository.delete(id, userId, userToken)
   }
 }
