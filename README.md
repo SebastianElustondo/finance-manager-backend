@@ -42,16 +42,19 @@ src/
 ## Installation
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **Set up environment variables:**
+
    ```bash
    cp .env.example .env
    ```
 
 3. **Configure environment variables in `.env`:**
+
    ```
    # Server Configuration
    PORT=3001
@@ -152,25 +155,29 @@ npm run lint:fix
 Connect to WebSocket server for real-time updates:
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3001');
+const ws = new WebSocket('ws://localhost:3001')
 
 // Authentication
-ws.send(JSON.stringify({
-  type: 'auth',
-  token: 'your-jwt-token'
-}));
+ws.send(
+  JSON.stringify({
+    type: 'auth',
+    token: 'your-jwt-token',
+  })
+)
 
 // Subscribe to price updates
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  symbols: ['AAPL', 'GOOGL', 'BTC']
-}));
+ws.send(
+  JSON.stringify({
+    type: 'subscribe',
+    symbols: ['AAPL', 'GOOGL', 'BTC'],
+  })
+)
 
 // Handle incoming messages
-ws.onmessage = (event) => {
-  const message = JSON.parse(event.data);
-  console.log('Received:', message);
-};
+ws.onmessage = event => {
+  const message = JSON.parse(event.data)
+  console.log('Received:', message)
+}
 ```
 
 ## Database Schema
@@ -186,17 +193,17 @@ The application uses Supabase PostgreSQL with the following main tables:
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | 3001 |
-| `NODE_ENV` | Environment | development |
-| `SUPABASE_URL` | Supabase project URL | - |
-| `SUPABASE_ANON_KEY` | Supabase anonymous key | - |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | - |
-| `JWT_SECRET` | JWT signing secret | - |
-| `CORS_ORIGIN` | Allowed CORS origin | http://localhost:3000 |
-| `RATE_LIMIT_WINDOW_MS` | Rate limit window | 900000 (15 min) |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | 100 |
+| Variable                    | Description               | Default               |
+| --------------------------- | ------------------------- | --------------------- |
+| `PORT`                      | Server port               | 3001                  |
+| `NODE_ENV`                  | Environment               | development           |
+| `SUPABASE_URL`              | Supabase project URL      | -                     |
+| `SUPABASE_ANON_KEY`         | Supabase anonymous key    | -                     |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | -                     |
+| `JWT_SECRET`                | JWT signing secret        | -                     |
+| `CORS_ORIGIN`               | Allowed CORS origin       | http://localhost:3000 |
+| `RATE_LIMIT_WINDOW_MS`      | Rate limit window         | 900000 (15 min)       |
+| `RATE_LIMIT_MAX_REQUESTS`   | Max requests per window   | 100                   |
 
 ## Security Features
 
@@ -230,4 +237,4 @@ The API returns consistent error responses:
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.
