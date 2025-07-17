@@ -33,6 +33,8 @@ export enum AssetType {
   ETF = 'etf',
   COMMODITY = 'commodity',
   REAL_ESTATE = 'real_estate',
+  BANK_ACCOUNT = 'bank_account',
+  CASH = 'cash',
   OTHER = 'other',
 }
 

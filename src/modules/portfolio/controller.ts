@@ -14,250 +14,228 @@ export class PortfolioController {
   }
 
   getAllPortfolios = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      })
+    }
+
+    const portfolios = await this.portfolioService.getAllPortfolios(
+      userId,
+      userToken
+    )
+
+    res.status(200).json({
+      success: true,
+      data: portfolios,
+    })
+  }
+
+  getPortfolioById = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const portfolioId = req.params.id
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      })
+    }
+
+    if (!portfolioId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Portfolio ID is required',
+      })
+    }
+
     try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      const portfolios = await this.portfolioService.getAllPortfolios(
+      const portfolio = await this.portfolioService.getPortfolioById(
+        portfolioId,
         userId,
         userToken
       )
 
       res.status(200).json({
         success: true,
-        data: portfolios,
+        data: portfolio,
       })
-    } catch (error) {
-      console.error('Get portfolios error:', error)
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-      })
-    }
-  }
-
-  getPortfolioById = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const portfolioId = req.params.id
-
-      if (!userId) {
-        return res.status(401).json({
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        serviceError.message === 'Portfolio not found'
+      ) {
+        return res.status(404).json({
           success: false,
-          error: 'User not authenticated',
+          error: 'Portfolio not found',
         })
       }
-
-      if (!portfolioId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Portfolio ID is required',
-        })
-      }
-
-      try {
-        const portfolio = await this.portfolioService.getPortfolioById(
-          portfolioId,
-          userId,
-          userToken
-        )
-
-        res.status(200).json({
-          success: true,
-          data: portfolio,
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          serviceError.message === 'Portfolio not found'
-        ) {
-          return res.status(404).json({
-            success: false,
-            error: 'Portfolio not found',
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Get portfolio error:', error)
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-      })
+      throw serviceError
     }
   }
 
   createPortfolio = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const { name, description, currency, isDefault } = req.body
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const { name, description, currency, isDefault } = req.body
 
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      try {
-        const portfolio = await this.portfolioService.createPortfolio(
-          userId,
-          {
-            name,
-            description,
-            currency,
-            isDefault,
-          },
-          userToken
-        )
-
-        res.status(201).json({
-          success: true,
-          message: 'Portfolio created successfully',
-          data: portfolio,
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          (serviceError.message.includes('required') ||
-            serviceError.message.includes('name'))
-        ) {
-          return res.status(400).json({
-            success: false,
-            error: serviceError.message,
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Create portfolio error:', error)
-      res.status(500).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        error: 'Internal server error',
+        error: 'User not authenticated',
       })
     }
-  }
 
-  updatePortfolio = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const portfolioId = req.params.id
-      const { name, description, currency, isDefault } = req.body
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      if (!portfolioId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Portfolio ID is required',
-        })
-      }
-
-      try {
-        const updateData: UpdatePortfolioRequest = {
+      const portfolio = await this.portfolioService.createPortfolio(
+        userId,
+        {
           name,
           description,
           currency,
           isDefault,
-        }
+        },
+        userToken
+      )
 
-        const portfolio = await this.portfolioService.updatePortfolio(
-          portfolioId,
-          userId,
-          updateData,
-          userToken
-        )
+      const allPortfolios = await this.portfolioService.getAllPortfolios(
+        userId,
+        userToken
+      )
 
-        res.status(200).json({
-          success: true,
-          message: 'Portfolio updated successfully',
-          data: portfolio,
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          serviceError.message === 'Portfolio not found'
-        ) {
-          return res.status(404).json({
-            success: false,
-            error: 'Portfolio not found',
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Update portfolio error:', error)
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error',
+      res.status(201).json({
+        success: true,
+        message: 'Portfolio created successfully',
+        data: {
+          created: portfolio,
+          portfolios: allPortfolios,
+        },
       })
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        (serviceError.message.includes('required') ||
+          serviceError.message.includes('name'))
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: serviceError.message,
+        })
+      }
+      throw serviceError
+    }
+  }
+
+  updatePortfolio = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const portfolioId = req.params.id
+    const { name, description, currency, isDefault } = req.body
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      })
+    }
+
+    if (!portfolioId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Portfolio ID is required',
+      })
+    }
+
+    try {
+      const updateData: UpdatePortfolioRequest = {
+        name,
+        description,
+        currency,
+        isDefault,
+      }
+
+      const portfolio = await this.portfolioService.updatePortfolio(
+        portfolioId,
+        userId,
+        updateData,
+        userToken
+      )
+
+      res.status(200).json({
+        success: true,
+        message: 'Portfolio updated successfully',
+        data: portfolio,
+      })
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        serviceError.message === 'Portfolio not found'
+      ) {
+        return res.status(404).json({
+          success: false,
+          error: 'Portfolio not found',
+        })
+      }
+      if (
+        serviceError instanceof Error &&
+        (serviceError.message.includes('required') ||
+          serviceError.message.includes('name'))
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: serviceError.message,
+        })
+      }
+      throw serviceError
     }
   }
 
   deletePortfolio = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const portfolioId = req.params.id
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const portfolioId = req.params.id
 
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      if (!portfolioId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Portfolio ID is required',
-        })
-      }
-
-      try {
-        await this.portfolioService.deletePortfolio(
-          portfolioId,
-          userId,
-          userToken
-        )
-
-        res.status(200).json({
-          success: true,
-          message: 'Portfolio deleted successfully',
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          serviceError.message === 'Portfolio not found'
-        ) {
-          return res.status(404).json({
-            success: false,
-            error: 'Portfolio not found',
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Delete portfolio error:', error)
-      res.status(500).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        error: 'Internal server error',
+        error: 'User not authenticated',
       })
+    }
+
+    if (!portfolioId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Portfolio ID is required',
+      })
+    }
+
+    try {
+      await this.portfolioService.deletePortfolio(
+        portfolioId,
+        userId,
+        userToken
+      )
+
+      res.status(200).json({
+        success: true,
+        message: 'Portfolio deleted successfully',
+      })
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        serviceError.message === 'Portfolio not found'
+      ) {
+        return res.status(404).json({
+          success: false,
+          error: 'Portfolio not found',
+        })
+      }
+      throw serviceError
     }
   }
 }

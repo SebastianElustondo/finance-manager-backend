@@ -205,8 +205,6 @@ export class AlertService implements IAlertService {
 
       if (shouldTrigger) {
         await this.alertRepository.markAsTriggered(alert.id, userToken)
-        // Here you could add notification logic (email, push notification, etc.)
-        console.log(`Alert triggered for ${symbol}: ${alert.message}`)
       }
     }
   }
