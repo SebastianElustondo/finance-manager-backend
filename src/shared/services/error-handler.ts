@@ -110,7 +110,7 @@ export class RetryHelper {
 
   async executeWithRetry<T>(
     operation: () => Promise<T>,
-    context: string = 'API call'
+    _context: string = 'API call'
   ): Promise<T> {
     let lastError: ApiError | null = null
 
@@ -128,9 +128,6 @@ export class RetryHelper {
         }
 
         const delay = ApiErrorHandler.getRetryDelay(lastError, attempt)
-        console.log(
-          `${context} failed (attempt ${attempt}/${this.maxRetries}), retrying in ${delay}ms...`
-        )
         await this.sleep(delay)
       }
     }

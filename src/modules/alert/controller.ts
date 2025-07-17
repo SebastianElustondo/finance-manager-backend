@@ -14,259 +14,224 @@ export class AlertController {
   }
 
   getAllAlerts = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
 
-      if (!userId) {
-        res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-        return
-      }
-
-      const alerts = await this.alertService.getAllAlerts(userId, userToken)
-
-      res.status(200).json({
-        success: true,
-        data: alerts,
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
       })
       return
-    } catch (error) {
-      console.error('Get alerts error:', error)
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error',
-      })
     }
+
+    const alerts = await this.alertService.getAllAlerts(userId, userToken)
+
+    res.status(200).json({
+      success: true,
+      data: alerts,
+    })
+    return
   }
 
   getAlertById = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const alertId = req.params.id
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const alertId = req.params.id
 
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      if (!alertId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Alert ID is required',
-        })
-      }
-
-      try {
-        const alert = await this.alertService.getAlertById(
-          alertId,
-          userId,
-          userToken
-        )
-
-        res.status(200).json({
-          success: true,
-          data: alert,
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          serviceError.message === 'Alert not found'
-        ) {
-          return res.status(404).json({
-            success: false,
-            error: 'Alert not found',
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Get alert error:', error)
-      res.status(500).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        error: 'Internal server error',
+        error: 'User not authenticated',
       })
+    }
+
+    if (!alertId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Alert ID is required',
+      })
+    }
+
+    try {
+      const alert = await this.alertService.getAlertById(
+        alertId,
+        userId,
+        userToken
+      )
+
+      res.status(200).json({
+        success: true,
+        data: alert,
+      })
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        serviceError.message === 'Alert not found'
+      ) {
+        return res.status(404).json({
+          success: false,
+          error: 'Alert not found',
+        })
+      }
+      throw serviceError
     }
   }
 
   createAlert = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const { symbol, type, condition, isActive, message } = req.body
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const { symbol, type, condition, isActive, message } = req.body
 
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      try {
-        const alert = await this.alertService.createAlert(
-          userId,
-          {
-            symbol,
-            type,
-            condition,
-            isActive,
-            message,
-          },
-          userToken
-        )
-
-        res.status(201).json({
-          success: true,
-          message: 'Alert created successfully',
-          data: alert,
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          (serviceError.message.includes('required') ||
-            serviceError.message.includes('Invalid') ||
-            serviceError.message.includes('must be'))
-        ) {
-          return res.status(400).json({
-            success: false,
-            error: serviceError.message,
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Create alert error:', error)
-      res.status(500).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        error: 'Internal server error',
+        error: 'User not authenticated',
       })
     }
-  }
 
-  updateAlert = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const alertId = req.params.id
-      const { symbol, type, condition, isActive, message } = req.body
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      if (!alertId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Alert ID is required',
-        })
-      }
-
-      try {
-        const updateData: UpdateAlertRequest = {
+      const alert = await this.alertService.createAlert(
+        userId,
+        {
           symbol,
           type,
           condition,
           isActive,
           message,
-        }
+        },
+        userToken
+      )
 
-        const alert = await this.alertService.updateAlert(
-          alertId,
-          userId,
-          updateData,
-          userToken
-        )
+      const allAlerts = await this.alertService.getAllAlerts(userId, userToken)
 
-        res.status(200).json({
-          success: true,
-          message: 'Alert updated successfully',
-          data: alert,
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          serviceError.message === 'Alert not found'
-        ) {
-          return res.status(404).json({
-            success: false,
-            error: 'Alert not found',
-          })
-        }
-        if (
-          serviceError instanceof Error &&
-          (serviceError.message.includes('required') ||
-            serviceError.message.includes('Invalid') ||
-            serviceError.message.includes('must be'))
-        ) {
-          return res.status(400).json({
-            success: false,
-            error: serviceError.message,
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Update alert error:', error)
-      res.status(500).json({
-        success: false,
-        error: 'Internal server error',
+      res.status(201).json({
+        success: true,
+        message: 'Alert created successfully',
+        data: {
+          created: alert,
+          alerts: allAlerts,
+        },
       })
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        (serviceError.message.includes('required') ||
+          serviceError.message.includes('Invalid') ||
+          serviceError.message.includes('must be'))
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: serviceError.message,
+        })
+      }
+      throw serviceError
+    }
+  }
+
+  updateAlert = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const alertId = req.params.id
+    const { symbol, type, condition, isActive, message } = req.body
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      })
+    }
+
+    if (!alertId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Alert ID is required',
+      })
+    }
+
+    try {
+      const updateData: UpdateAlertRequest = {
+        symbol,
+        type,
+        condition,
+        isActive,
+        message,
+      }
+
+      const alert = await this.alertService.updateAlert(
+        alertId,
+        userId,
+        updateData,
+        userToken
+      )
+
+      res.status(200).json({
+        success: true,
+        message: 'Alert updated successfully',
+        data: alert,
+      })
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        serviceError.message === 'Alert not found'
+      ) {
+        return res.status(404).json({
+          success: false,
+          error: 'Alert not found',
+        })
+      }
+      if (
+        serviceError instanceof Error &&
+        (serviceError.message.includes('required') ||
+          serviceError.message.includes('Invalid') ||
+          serviceError.message.includes('must be'))
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: serviceError.message,
+        })
+      }
+      throw serviceError
     }
   }
 
   deleteAlert = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user?.id
-      const userToken = this.extractUserToken(req)
-      const alertId = req.params.id
+    const userId = req.user?.id
+    const userToken = this.extractUserToken(req)
+    const alertId = req.params.id
 
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated',
-        })
-      }
-
-      if (!alertId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Alert ID is required',
-        })
-      }
-
-      try {
-        await this.alertService.deleteAlert(alertId, userId, userToken)
-
-        res.status(200).json({
-          success: true,
-          message: 'Alert deleted successfully',
-        })
-      } catch (serviceError: unknown) {
-        if (
-          serviceError instanceof Error &&
-          serviceError.message === 'Alert not found'
-        ) {
-          return res.status(404).json({
-            success: false,
-            error: 'Alert not found',
-          })
-        }
-        throw serviceError
-      }
-    } catch (error) {
-      console.error('Delete alert error:', error)
-      res.status(500).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        error: 'Internal server error',
+        error: 'User not authenticated',
       })
+    }
+
+    if (!alertId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Alert ID is required',
+      })
+    }
+
+    try {
+      await this.alertService.deleteAlert(alertId, userId, userToken)
+
+      res.status(200).json({
+        success: true,
+        message: 'Alert deleted successfully',
+      })
+    } catch (serviceError: unknown) {
+      if (
+        serviceError instanceof Error &&
+        serviceError.message === 'Alert not found'
+      ) {
+        return res.status(404).json({
+          success: false,
+          error: 'Alert not found',
+        })
+      }
+      throw serviceError
     }
   }
 }
